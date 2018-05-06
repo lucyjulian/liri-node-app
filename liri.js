@@ -19,38 +19,56 @@ for (i = 4; i < process.argv.length; i++){
 
 var action = process.argv[2];
 
+
 function tweets(){
     var params = {screen_name: 'papayapix'};
     client.get('statuses/user_timeline', params, function(error, tweets, response) {
         if (!error) {
-            console.log(tweets);
-        }
+            
+            for (var i = 0; i < tweets.length; i++) {
+                var tweetContent = tweets[i].text;
+                console.log("Tweet Text: " + tweetContent);
+                var tweetDate = tweets[i].created_at;
+                console.log("Tweet Creation Date: " + tweetDate);
+            };
+        };
+        if (error){
+            console.log(error);
+        };
     });
 };
 
+
 function spotifyFunction(searchTerm){
-    spotify.search({ type: 'track', query: searchTerm }, function(err, data) {
+    spotify.search({ type: 'track', query: searchTerm, limit: 1 }, function(err, data) {
         if (err) {
             return console.log('Error occurred: ' + err);
         };
 
-        console.log(data); 
+        console.log(data.tracks.items[0]); 
     });
 };
 
 function omdbFunction(searchTerm){
-    omdb.search(searchTerm, function(err, movies) {
-        if(err) {
-            return console.error(err);
-        }
 
-        if(movies.length < 1) {
-            return console.log('No movies were found!');
-        }
+    // Then run a request to the OMDB API with the movie specified
+    request("https://www.omdbapi.com/?t=" + searchTerm + "&y=&plot=short&apikey=1bb4c85e", function(error, response, body) {
 
-        movies.forEach(function(movie) {
-            console.log('%s (%d)', movie.title, movie.year);
-        });
+    // If the request is successful (i.e. if the response status code is 200)
+        if (!error && response.statusCode === 200) {
+            var movie = JSON.parse(body);
+      
+            console.log("The movie is: " + movie.Title +
+            "\nRelease year: " + movie.Year +
+            "\nIMDB rating: " + movie.imdbRating +
+            "\nRotten Tomatoes: " + movie.Ratings[2].Value +
+            "\nCountry: " + movie.Country +
+            "\nLanguage: " + movie.Language +
+            "\nPlot: " + movie.Plot +
+            "\nActors: " + movie.Actors
+            );
+        }
+        else if (err) return err;
     });
 };
 
@@ -87,14 +105,25 @@ function actuallyDoThis(action, searchTerm){
             break;
         case `spotify-this-song`:
             console.log("spotify searching");
+            if (!searchTerm){
+                spotifyFunction("The Sign Ace of Base");
+            }
+            else {
             spotifyFunction(searchTerm);
+            }
             break;
         case `movie-this`:
             console.log("omdb searching");
+            if (!searchTerm){
+                omdbFunction("Mr. Nobody");
+            }
+            else {
             omdbFunction(searchTerm);
+            }
             break;
         case `do-what-it-says`:
             doWhatItSays();
             break;
     }
-}
+};
+actuallyDoThis(action, searchTerm);
